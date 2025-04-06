@@ -39,6 +39,55 @@
             border-radius: 3px;
             word-break: break-all;
         }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        .tab-button {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            padding: 8px 15px;
+            margin-right: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            font-weight: normal;
+        }
+        .tab-button:hover {
+            background-color: #e8e8e8;
+            border-color: #bbb;
+        }
+        .tab-button.active {
+            background-color: #fff;
+            border-bottom: 1px solid #fff;
+            margin-bottom: -1px;
+            font-weight: bold;
+            color: #4CAF50;
+            box-shadow: 0 -2px 3px rgba(0,0,0,0.05);
+        }
+        .tab-button.active:hover {
+            background-color: #fff;
+        }
+        .tab-content {
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-top: none;
+            background-color: #fff;
+            border-radius: 0 0 4px 4px;
+        }
+        .tab-pane {
+            display: none;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+        .convert-actions {
+            margin-top: 15px;
+            text-align: right;
+        }
         button {
             background-color: #4CAF50;
             color: white;
@@ -170,9 +219,349 @@
         <span id="loading">Loading...</span>
     </div>
 
+    <div class="card" id="request-details-card">
+        <h2>Request Details</h2>
+        <div class="tabs">
+            <button class="tab-button active" data-tab="fhir-request">FHIR</button>
+            <button class="tab-button" data-tab="availity-request">Availity (Converted)</button>
+        </div>
+        <div class="tab-content">
+            <div id="fhir-request-tab" class="tab-pane active">
+                <details id="fhir-request-viewer" open>
+                    <summary>FHIR Request</summary>
+                    <pre id="fhir-request-content"></pre>
+                </details>
+            </div>
+            <div id="availity-request-tab" class="tab-pane">
+                <details id="availity-request-viewer" open>
+                    <summary>Availity Request</summary>
+                    <pre id="availity-request-content"></pre>
+                </details>
+            </div>
+        </div>
+    </div>
+
     <div id="result"></div>
 
     <script>
+        // Sample FHIR request
+        const sampleFhirRequest = {
+            "resourceType": "Claim",
+            "id": "example-claim-12345",
+            "status": "active",
+            "use": "preauthorization",
+            "patient": {
+                "reference": "Patient/PATIENT",
+                "display": "TEST PATIENT"
+            },
+            "created": "2023-01-15",
+            "provider": {
+                "reference": "Organization/1234567893",
+                "display": "TEST PROVIDER"
+            },
+            "priority": {
+                "coding": [{
+                    "system": "http://terminology.hl7.org/CodeSystem/processpriority",
+                    "code": "normal"
+                }]
+            },
+            "insurance": [{
+                "sequence": 1,
+                "focal": true,
+                "coverage": {
+                    "reference": "Coverage/SUBSCRIBER123",
+                    "display": "Coverage for PATIENT"
+                }
+            }],
+            "diagnosis": [{
+                "sequence": 1,
+                "diagnosisCodeableConcept": {
+                    "coding": [{
+                        "system": "http://hl7.org/fhir/sid/icd-10",
+                        "code": "J20.9",
+                        "display": "Acute bronchitis, unspecified"
+                    }]
+                }
+            }],
+            "procedure": [{
+                "sequence": 1,
+                "procedureCodeableConcept": {
+                    "coding": [{
+                        "system": "http://www.ama-assn.org/go/cpt",
+                        "code": "99213",
+                        "display": "Office or other outpatient visit for the evaluation and management of an established patient"
+                    }]
+                },
+                "date": "2023-01-20"
+            }],
+            "item": [{
+                "sequence": 1,
+                "productOrService": {
+                    "coding": [{
+                        "system": "http://www.ama-assn.org/go/cpt",
+                        "code": "99213",
+                        "display": "Office or other outpatient visit"
+                    }]
+                },
+                "servicedPeriod": {
+                    "start": "2023-01-20",
+                    "end": "2023-01-20"
+                },
+                "quantity": {
+                    "value": 1
+                }
+            }]
+        };
+
+        // Function to convert FHIR to Availity
+        function convertFhirToAvailityRequest(fhirJson) {
+            try {
+                // Parse FHIR JSON if it's a string
+                const fhirObj = typeof fhirJson === 'string' ? JSON.parse(fhirJson) : fhirJson;
+
+                // Create a simple Availity service review object
+                const serviceReview = {
+                    // Payer information
+                    payer: {
+                        id: fhirObj.insurer?.identifier?.value || 'BCBSF',
+                        name: fhirObj.insurer?.display || 'FLORIDA BLUE'
+                    },
+
+                    // Provider information
+                    requestingProvider: {
+                        npi: fhirObj.provider?.identifier?.value || '1234567893',
+                        lastName: fhirObj.provider?.display?.split(' ')[1] || 'PROVIDER',
+                        firstName: fhirObj.provider?.display?.split(' ')[0] || 'TEST',
+                        roleCode: '1P',
+                        addressLine1: '123 Provider Street',
+                        city: 'JACKSONVILLE',
+                        stateCode: 'FL',
+                        zipCode: '32223',
+                        phone: '9043334444',
+                        contactName: 'John Doe'
+                    },
+
+                    // Subscriber information
+                    subscriber: {
+                        memberId: fhirObj.patient?.identifier?.value || 'ASBA1274712',
+                        firstName: fhirObj.patient?.display?.split(' ')[0] || 'TEST',
+                        lastName: fhirObj.patient?.display?.split(' ')[1] || 'PATIENT'
+                    },
+
+                    // Patient information
+                    patient: {
+                        firstName: 'TEST',
+                        lastName: 'PATIENTONE',
+                        subscriberRelationshipCode: '18',
+                        birthDate: '1990-01-01'
+                    },
+
+                    // Diagnoses
+                    diagnoses: fhirObj.diagnosis?.map(diag => ({
+                        qualifierCode: 'ABK',
+                        code: diag.diagnosisCodeableConcept?.coding?.[0]?.code || '78900'
+                    })) || [{
+                        qualifierCode: 'ABK',
+                        code: '78900'
+                    }],
+
+                    // Request metadata
+                    requestTypeCode: 'HS',
+                    serviceTypeCode: '73',
+                    placeOfServiceCode: '22',
+                    serviceLevelCode: 'E',
+                    fromDate: '2022-09-02',
+                    toDate: '2022-09-13',
+                    quantity: '1',
+                    quantityTypeCode: 'VS',
+
+                    // Procedures
+                    procedures: fhirObj.procedure?.map(proc => ({
+                        fromDate: proc.date || '2022-09-02',
+                        toDate: proc.date || '2022-09-13',
+                        code: proc.procedureCodeableConcept?.coding?.[0]?.code || '99213',
+                        qualifierCode: 'HC',
+                        quantity: '1',
+                        quantityTypeCode: 'UN'
+                    })) || [{
+                        fromDate: '2022-09-02',
+                        toDate: '2022-09-13',
+                        code: '99213',
+                        qualifierCode: 'HC',
+                        quantity: '1',
+                        quantityTypeCode: 'UN'
+                    }],
+
+                    // Rendering Providers
+                    renderingProviders: [{
+                        lastName: 'PROVIDERONE',
+                        firstName: 'TEST',
+                        npi: '1234567891',
+                        taxId: '111111111',
+                        roleCode: '71',
+                        addressLine1: '111 HEALTHY PKWY',
+                        city: 'JACKSONVILLE',
+                        stateCode: 'FL',
+                        zipCode: '22222'
+                    }]
+                };
+
+                return { serviceReview };
+            } catch (e) {
+                console.error('Error converting FHIR to Availity:', e);
+                return { error: e.message };
+            }
+        }
+
+        // Function to populate the Request Details section
+        function populateRequestDetails() {
+            // Populate FHIR request
+            const fhirRequestContent = document.getElementById('fhir-request-content');
+            if (fhirRequestContent) {
+                fhirRequestContent.textContent = JSON.stringify(sampleFhirRequest, null, 2);
+            }
+
+            // Convert FHIR to Availity and populate Availity request
+            const availityRequestContent = document.getElementById('availity-request-content');
+            if (availityRequestContent) {
+                const availityRequest = convertFhirToAvailityRequest(sampleFhirRequest);
+                availityRequestContent.textContent = JSON.stringify(availityRequest, null, 2);
+            }
+        }
+
+        // Call populateRequestDetails when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            populateRequestDetails();
+
+            // Add event listeners for request tab buttons
+            document.querySelectorAll('.tab-button[data-tab^="fhir-request"], .tab-button[data-tab^="availity-request"]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    switchRequestTab(tabId);
+                });
+            });
+        });
+
+        // Function to switch request tabs
+        function switchRequestTab(tabId) {
+            // Hide all request tab panes
+            const tabPanes = document.querySelectorAll('#request-details-card .tab-pane');
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+
+            // Deactivate all request tab buttons
+            const tabButtons = document.querySelectorAll('#request-details-card .tab-button');
+            tabButtons.forEach(button => button.classList.remove('active'));
+
+            // Activate the selected tab
+            document.getElementById(tabId + '-tab').classList.add('active');
+            document.querySelector(`#request-details-card .tab-button[data-tab="${tabId}"]`).classList.add('active');
+        }
+
+        // Function to load cached data
+        function loadCachedData() {
+            try {
+                const cachedData = localStorage.getItem('priorAuthResponse');
+                if (cachedData) {
+                    const data = JSON.parse(cachedData);
+                    const resultDiv = document.getElementById('result');
+
+                    // Create status card
+                    const statusCard = document.createElement('div');
+                    statusCard.className = 'card success';
+                    statusCard.innerHTML = `
+                        <h2>Cached Submission</h2>
+                        <p>Showing cached prior authorization request. Submit a new request to update.</p>
+                        <p><strong>Resource ID:</strong> ${data.resourceId}</p>
+                    `;
+                    resultDiv.appendChild(statusCard);
+
+                    // Create polling card if it exists in cache
+                    if (data.pollingStatus) {
+                        const pollingCard = document.createElement('div');
+                        pollingCard.className = 'card ' + (data.pollingStatus.success ? 'success' : 'pending');
+                        pollingCard.id = 'polling-card';
+                        pollingCard.innerHTML = `
+                            <h2>Polling Status</h2>
+                            <div class="poll-info">
+                                <div>Attempt: <span id="attempt-count">${data.pollingStatus.attempts}</span>/<span id="max-attempts">10</span></div>
+                                <div>Status: <span id="status-text">${data.pollingStatus.status}</span></div>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar" id="progress-bar" style="width: ${(data.pollingStatus.attempts / 10) * 100}%"></div>
+                            </div>
+                        `;
+                        resultDiv.appendChild(pollingCard);
+                    }
+
+                    // Create JSON card with tabs
+                    const jsonCard = document.createElement('div');
+                    jsonCard.className = 'card';
+                    jsonCard.id = 'json-card';
+                    jsonCard.innerHTML = `
+                        <h2>Response Details</h2>
+                        <div class="tabs">
+                            <button class="tab-button active" data-tab="availity">Availity (Original)</button>
+                            <button class="tab-button" data-tab="fhir">FHIR (Converted)</button>
+                        </div>
+                        <div class="tab-content">
+                            <div id="availity-tab" class="tab-pane active">
+                                <details id="json-viewer" open>
+                                    <summary>Availity JSON Response</summary>
+                                    <pre id="json-content">${data.availityJson || 'No data available'}</pre>
+                                </details>
+                            </div>
+                            <div id="fhir-tab" class="tab-pane">
+                                <details id="fhir-viewer" open>
+                                    <summary>Converted FHIR Resource</summary>
+                                    <pre id="fhir-content">${data.fhirJson || 'No data available yet'}</pre>
+                                </details>
+                                <!-- Automatic conversion - no button needed -->
+                            </div>
+                        </div>
+                    `;
+                    resultDiv.appendChild(jsonCard);
+
+                    // No need for convert button event listener - conversion is automatic
+
+                    // Add event listeners for tab buttons
+                    document.querySelectorAll('.tab-button').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const tabId = this.getAttribute('data-tab');
+                            switchTab(tabId);
+                        });
+                    });
+                }
+            } catch (e) {
+                console.error('Error loading cached data:', e);
+                // Clear the cache if there's an error
+                localStorage.removeItem('priorAuthResponse');
+            }
+        }
+
+        // Function to save response data to cache
+        function saveCachedData(resourceId, availityJson, fhirJson, pollingStatus) {
+            try {
+                const cacheData = {
+                    resourceId: resourceId,
+                    availityJson: availityJson,
+                    fhirJson: fhirJson,
+                    pollingStatus: pollingStatus,
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem('priorAuthResponse', JSON.stringify(cacheData));
+            } catch (e) {
+                console.error('Error saving cached data:', e);
+            }
+        }
+
+        // Function to clear cached data
+        function clearCachedData() {
+            localStorage.removeItem('priorAuthResponse');
+        }
+
+        // Load cached data when the page loads
+        loadCachedData();
+
         document.getElementById('submitAuth').addEventListener('click', function() {
             const resultDiv = document.getElementById('result');
             const loadingSpan = document.getElementById('loading');
@@ -182,6 +571,9 @@
 
             // Clear previous results
             resultDiv.innerHTML = '';
+
+            // Clear cached data when submitting a new request
+            clearCachedData();
 
             // Submit the prior auth request
             fetch('/prior-auth/submit', {
@@ -222,18 +614,36 @@
                     `;
                     resultDiv.appendChild(pollingCard);
 
-                    // Create JSON card
+                    // Create Response Details card with tabs
                     const jsonCard = document.createElement('div');
                     jsonCard.className = 'card';
                     jsonCard.id = 'json-card';
                     jsonCard.innerHTML = `
                         <h2>Response Details</h2>
-                        <details id="json-viewer">
-                            <summary>JSON Response (click to expand)</summary>
-                            <pre id="json-content">No data available yet</pre>
-                        </details>
+                        <div class="tabs">
+                            <button class="tab-button active" data-tab="availity">Availity (Original)</button>
+                            <button class="tab-button" data-tab="fhir">FHIR (Converted)</button>
+                        </div>
+                        <div class="tab-content">
+                            <div id="availity-tab" class="tab-pane active">
+                                <details id="json-viewer" open>
+                                    <summary>Availity JSON Response</summary>
+                                    <pre id="json-content">No data available yet</pre>
+                                </details>
+                            </div>
+                            <div id="fhir-tab" class="tab-pane">
+                                <details id="fhir-viewer" open>
+                                    <summary>Converted FHIR Resource</summary>
+                                    <pre id="fhir-content">No data available yet</pre>
+                                </details>
+                                <!-- Automatic conversion - no button needed -->
+                            </div>
+                        </div>
                     `;
                     resultDiv.appendChild(jsonCard);
+
+                    // Save initial response data to cache
+                    saveCachedData(resourceId.trim(), null, null, null);
 
                     // Start polling
                     startPolling(resourceId.trim());
@@ -355,6 +765,7 @@
                             if (jsonContent) {
                                 // Try to extract JSON from the response
                                 let jsonData = data;
+                                let parsedJson = null;
 
                                 // Look for JSON-like content in the response
                                 const jsonMatch = data.match(/\{[\s\S]*\}/);
@@ -363,8 +774,33 @@
 
                                     // Try to parse and format the JSON
                                     try {
-                                        const formattedJson = JSON.stringify(JSON.parse(jsonData), null, 2);
+                                        parsedJson = JSON.parse(jsonData);
+                                        const formattedJson = JSON.stringify(parsedJson, null, 2);
                                         jsonContent.textContent = formattedJson;
+
+                                        // Save the Availity JSON to cache
+                                        const pollingStatus = {
+                                            attempts: attempts,
+                                            status: simpleStatus,
+                                            success: simpleStatus === 'Complete' || simpleStatus === 'Approved' || simpleStatus === 'Denied' || simpleStatus === 'Pended'
+                                        };
+                                        saveCachedData(id, formattedJson, document.getElementById('fhir-content')?.textContent, pollingStatus);
+
+                                        // Automatically convert to FHIR
+                                        try {
+                                            // Only convert if we're in the FHIR tab or if the FHIR content is empty
+                                            const fhirTab = document.getElementById('fhir-tab');
+                                            const fhirContent = document.getElementById('fhir-content');
+
+                                            if ((fhirTab && fhirTab.classList.contains('active')) ||
+                                                (fhirContent && (!fhirContent.textContent ||
+                                                                fhirContent.textContent === 'No data available yet' ||
+                                                                fhirContent.textContent === 'Converting...'))) {
+                                                convertToFhir(parsedJson);
+                                            }
+                                        } catch (e) {
+                                            console.error('Error automatically converting to FHIR during polling:', e);
+                                        }
                                     } catch (e) {
                                         // If JSON parsing fails, just show the raw response
                                         jsonContent.textContent = jsonData;
@@ -398,6 +834,179 @@
             // Start polling
             poll();
         }
+
+        // Function to switch tabs
+        function switchTab(tabId) {
+            // Determine which card contains the tab
+            let cardSelector = '#json-card';
+            if (tabId.includes('request')) {
+                // This is a request tab, so we don't need to do anything special
+                return;
+            }
+
+            // Hide all tab panes in the response card
+            const tabPanes = document.querySelectorAll(`${cardSelector} .tab-pane`);
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+
+            // Deactivate all tab buttons in the response card
+            const tabButtons = document.querySelectorAll(`${cardSelector} .tab-button`);
+            tabButtons.forEach(button => button.classList.remove('active'));
+
+            // Activate the selected tab
+            document.getElementById(tabId + '-tab').classList.add('active');
+            document.querySelector(`${cardSelector} .tab-button[data-tab="${tabId}"]`).classList.add('active');
+
+            // If switching to FHIR tab, automatically convert the Availity response
+            if (tabId === 'fhir') {
+                const jsonContent = document.getElementById('json-content');
+                const fhirContent = document.getElementById('fhir-content');
+
+                if (jsonContent && fhirContent && jsonContent.textContent && jsonContent.textContent !== 'No data available' && jsonContent.textContent !== 'No data available yet') {
+                    try {
+                        // Parse the Availity JSON
+                        const availityJson = JSON.parse(jsonContent.textContent);
+
+                        // Convert to FHIR
+                        convertToFhir(availityJson);
+                    } catch (e) {
+                        console.error('Error automatically converting to FHIR:', e);
+                        fhirContent.textContent = 'Error converting to FHIR: ' + e.message;
+                    }
+                }
+            }
+        }
+
+        // Function to convert Availity response to FHIR directly in the browser
+        function convertToFhir(availityJson) {
+            const fhirContent = document.getElementById('fhir-content');
+            if (!fhirContent) return;
+
+            fhirContent.textContent = 'Converting...';
+
+            try {
+                // Parse Availity JSON if it's a string
+                const availityObj = typeof availityJson === 'string' ? JSON.parse(availityJson) : availityJson;
+
+                // Extract serviceReview if it exists
+                const serviceReview = availityObj.serviceReview || availityObj;
+
+                // Create a FHIR Claim resource
+                const fhirClaim = {
+                    resourceType: 'Claim',
+                    id: 'example-claim-' + Math.floor(Math.random() * 10000),
+                    status: 'active',
+                    use: 'preauthorization',
+                    created: new Date().toISOString(),
+
+                    // Patient information
+                    patient: {
+                        reference: 'Patient/' + (serviceReview.patient?.lastName || 'PATIENT'),
+                        display: (serviceReview.patient?.firstName || '') + ' ' + (serviceReview.patient?.lastName || 'PATIENT')
+                    },
+
+                    // Provider information
+                    provider: {
+                        reference: 'Organization/' + (serviceReview.requestingProvider?.npi || '1234567893'),
+                        display: serviceReview.requestingProvider?.lastName || 'PROVIDER'
+                    },
+
+                    // Insurer information
+                    insurer: {
+                        reference: 'Organization/' + (serviceReview.payer?.id || 'BCBSF'),
+                        display: serviceReview.payer?.name || 'FLORIDA BLUE'
+                    },
+
+                    // Diagnoses
+                    diagnosis: serviceReview.diagnoses?.map((diag, index) => ({
+                        sequence: index + 1,
+                        diagnosisCodeableConcept: {
+                            coding: [{
+                                system: 'http://hl7.org/fhir/sid/icd-10',
+                                code: diag.code || '78900',
+                                display: 'Diagnosis ' + (index + 1)
+                            }]
+                        }
+                    })) || [],
+
+                    // Procedures
+                    procedure: serviceReview.procedures?.map((proc, index) => ({
+                        sequence: index + 1,
+                        procedureCodeableConcept: {
+                            coding: [{
+                                system: 'http://www.ama-assn.org/go/cpt',
+                                code: proc.code || '99213',
+                                display: 'Procedure ' + (index + 1)
+                            }]
+                        },
+                        date: proc.fromDate || '2022-09-02'
+                    })) || [],
+
+                    // Insurance
+                    insurance: [{
+                        sequence: 1,
+                        focal: true,
+                        coverage: {
+                            reference: 'Coverage/' + (serviceReview.subscriber?.memberId || 'ASBA1274712'),
+                            display: 'Coverage for ' + (serviceReview.subscriber?.lastName || 'PATIENT')
+                        }
+                    }],
+
+                    // Item
+                    item: serviceReview.procedures?.map((proc, index) => ({
+                        sequence: index + 1,
+                        productOrService: {
+                            coding: [{
+                                system: 'http://www.ama-assn.org/go/cpt',
+                                code: proc.code || '99213',
+                                display: 'Service ' + (index + 1)
+                            }]
+                        },
+                        servicedPeriod: {
+                            start: proc.fromDate || '2022-09-02',
+                            end: proc.toDate || '2022-09-13'
+                        },
+                        quantity: {
+                            value: parseInt(proc.quantity || '1')
+                        }
+                    })) || []
+                };
+
+                // Format the FHIR claim as JSON
+                const formattedJson = JSON.stringify(fhirClaim, null, 2);
+                fhirContent.textContent = formattedJson;
+
+                // Save the FHIR JSON to cache
+                const availityJsonText = document.getElementById('json-content')?.textContent;
+                const resourceId = availityJsonText ? JSON.parse(availityJsonText)?.id : null;
+                if (resourceId) {
+                    // Get the current polling status from the UI
+                    const attemptCount = document.getElementById('attempt-count')?.textContent || '0';
+                    const statusText = document.getElementById('status-text')?.textContent || 'Unknown';
+                    const pollingStatus = {
+                        attempts: parseInt(attemptCount) || 0,
+                        status: statusText,
+                        success: statusText === 'Complete' || statusText === 'Approved' || statusText === 'Denied' || statusText === 'Pended'
+                    };
+                    saveCachedData(resourceId, availityJsonText, formattedJson, pollingStatus);
+                }
+
+                // No need to switch tabs - we're already in the FHIR tab
+            } catch (e) {
+                fhirContent.textContent = 'Error converting to FHIR: ' + e.message;
+            }
+        }
+
+        // Add event listeners for tab buttons
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('tab-button')) {
+                const tabId = event.target.getAttribute('data-tab');
+                if (tabId.includes('request')) {
+                    switchRequestTab(tabId);
+                } else {
+                    switchTab(tabId);
+                }
+            }
+        });
     </script>
 </body>
 </html>

@@ -368,84 +368,212 @@
             }, 5000);
         }
 
-        // Convert FHIR Claim to Availity API format using the API
+        // Convert FHIR Claim to Availity API format directly in the browser
         function convertFhirToAvailityJson(fhirJson) {
             return new Promise((resolve, reject) => {
                 try {
                     // Parse FHIR JSON if it's a string to validate it
-                    if (typeof fhirJson === 'string') {
-                        const parsed = JSON.parse(fhirJson);
+                    const fhirObj = typeof fhirJson === 'string' ? JSON.parse(fhirJson) : fhirJson;
 
-                        // Validate that this is a FHIR Claim
-                        if (parsed.resourceType !== 'Claim') {
-                            throw new Error('Input is not a FHIR Claim resource');
-                        }
+                    // Validate that this is a FHIR Claim
+                    if (fhirObj.resourceType !== 'Claim') {
+                        throw new Error('Input is not a FHIR Claim resource');
                     }
 
-                    // Call the API to convert the FHIR JSON
-                    fetch('/api/convert/fhir-to-availity', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
+                    // Create a simple Availity service review object
+                    const serviceReview = {
+                        // Payer information
+                        payer: {
+                            id: fhirObj.insurer?.identifier?.value || 'BCBSF',
+                            name: fhirObj.insurer?.display || 'FLORIDA BLUE'
                         },
-                        body: typeof fhirJson === 'string' ? fhirJson : JSON.stringify(fhirJson)
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.text().then(text => {
-                                throw new Error('API Error: ' + text);
-                            });
-                        }
-                        return response.text();
-                    })
-                    .then(data => {
-                        resolve(data);
-                    })
-                    .catch(error => {
-                        reject(error);
-                    });
+
+                        // Provider information
+                        requestingProvider: {
+                            npi: fhirObj.provider?.identifier?.value || '1234567893',
+                            lastName: fhirObj.provider?.display?.split(' ')[1] || 'PROVIDER',
+                            firstName: fhirObj.provider?.display?.split(' ')[0] || 'TEST',
+                            roleCode: '1P',
+                            addressLine1: '123 Provider Street',
+                            city: 'JACKSONVILLE',
+                            stateCode: 'FL',
+                            zipCode: '32223',
+                            phone: '9043334444',
+                            contactName: 'John Doe'
+                        },
+
+                        // Subscriber information
+                        subscriber: {
+                            memberId: fhirObj.patient?.identifier?.value || 'ASBA1274712',
+                            firstName: fhirObj.patient?.display?.split(' ')[0] || 'TEST',
+                            lastName: fhirObj.patient?.display?.split(' ')[1] || 'PATIENT'
+                        },
+
+                        // Patient information
+                        patient: {
+                            firstName: 'TEST',
+                            lastName: 'PATIENTONE',
+                            subscriberRelationshipCode: '18',
+                            birthDate: '1990-01-01'
+                        },
+
+                        // Diagnoses
+                        diagnoses: fhirObj.diagnosis?.map(diag => ({
+                            qualifierCode: 'ABK',
+                            code: diag.diagnosisCodeableConcept?.coding?.[0]?.code || '78900'
+                        })) || [{
+                            qualifierCode: 'ABK',
+                            code: '78900'
+                        }],
+
+                        // Request metadata
+                        requestTypeCode: 'HS',
+                        serviceTypeCode: '73',
+                        placeOfServiceCode: '22',
+                        serviceLevelCode: 'E',
+                        fromDate: '2022-09-02',
+                        toDate: '2022-09-13',
+                        quantity: '1',
+                        quantityTypeCode: 'VS',
+
+                        // Procedures
+                        procedures: fhirObj.procedure?.map(proc => ({
+                            fromDate: '2022-09-02',
+                            toDate: '2022-09-13',
+                            code: proc.procedureCodeableConcept?.coding?.[0]?.code || '99213',
+                            qualifierCode: 'HC',
+                            quantity: '1',
+                            quantityTypeCode: 'UN'
+                        })) || [{
+                            fromDate: '2022-09-02',
+                            toDate: '2022-09-13',
+                            code: '99213',
+                            qualifierCode: 'HC',
+                            quantity: '1',
+                            quantityTypeCode: 'UN'
+                        }],
+
+                        // Rendering Providers
+                        renderingProviders: [{
+                            lastName: 'PROVIDERONE',
+                            firstName: 'TEST',
+                            npi: '1234567891',
+                            taxId: '111111111',
+                            roleCode: '71',
+                            addressLine1: '111 HEALTHY PKWY',
+                            city: 'JACKSONVILLE',
+                            stateCode: 'FL',
+                            zipCode: '22222'
+                        }]
+                    };
+
+                    // Wrap in the expected structure
+                    const availityJson = JSON.stringify({ serviceReview }, null, 2);
+                    resolve(availityJson);
                 } catch (e) {
                     reject(e);
                 }
             });
         }
 
-        // Convert Availity API format to FHIR Claim
+        // Convert Availity API format to FHIR Claim directly in the browser
         function convertAvailityToFhirJson(availityJson) {
             return new Promise((resolve, reject) => {
                 try {
                     // Parse Availity JSON if it's a string to validate it
-                    if (typeof availityJson === 'string') {
-                        const parsed = JSON.parse(availityJson);
+                    const availityObj = typeof availityJson === 'string' ? JSON.parse(availityJson) : availityJson;
 
-                        // Validate that this is an Availity API format
-                        if (!parsed.serviceReview) {
-                            throw new Error('Input is not in Availity API format');
-                        }
+                    // Validate that this is an Availity API format
+                    if (!availityObj.serviceReview) {
+                        throw new Error('Input is not in Availity API format');
                     }
 
-                    // Call the API to convert the Availity JSON
-                    fetch('/api/convert/availity-to-fhir', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
+                    const serviceReview = availityObj.serviceReview;
+
+                    // Create a FHIR Claim resource
+                    const fhirClaim = {
+                        resourceType: 'Claim',
+                        id: 'example-claim-' + Math.floor(Math.random() * 10000),
+                        status: 'active',
+                        use: 'preauthorization',
+                        created: new Date().toISOString(),
+
+                        // Patient information
+                        patient: {
+                            reference: 'Patient/' + (serviceReview.patient?.lastName || 'PATIENT'),
+                            display: (serviceReview.patient?.firstName || '') + ' ' + (serviceReview.patient?.lastName || 'PATIENT')
                         },
-                        body: typeof availityJson === 'string' ? availityJson : JSON.stringify(availityJson)
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.text().then(text => {
-                                throw new Error('API Error: ' + text);
-                            });
-                        }
-                        return response.text();
-                    })
-                    .then(data => {
-                        resolve(data);
-                    })
-                    .catch(error => {
-                        reject(error);
-                    });
+
+                        // Provider information
+                        provider: {
+                            reference: 'Organization/' + (serviceReview.requestingProvider?.npi || '1234567893'),
+                            display: serviceReview.requestingProvider?.lastName || 'PROVIDER'
+                        },
+
+                        // Insurer information
+                        insurer: {
+                            reference: 'Organization/' + (serviceReview.payer?.id || 'BCBSF'),
+                            display: serviceReview.payer?.name || 'FLORIDA BLUE'
+                        },
+
+                        // Diagnoses
+                        diagnosis: serviceReview.diagnoses?.map((diag, index) => ({
+                            sequence: index + 1,
+                            diagnosisCodeableConcept: {
+                                coding: [{
+                                    system: 'http://hl7.org/fhir/sid/icd-10',
+                                    code: diag.code || '78900',
+                                    display: 'Diagnosis ' + (index + 1)
+                                }]
+                            }
+                        })) || [],
+
+                        // Procedures
+                        procedure: serviceReview.procedures?.map((proc, index) => ({
+                            sequence: index + 1,
+                            procedureCodeableConcept: {
+                                coding: [{
+                                    system: 'http://www.ama-assn.org/go/cpt',
+                                    code: proc.code || '99213',
+                                    display: 'Procedure ' + (index + 1)
+                                }]
+                            },
+                            date: proc.fromDate || '2022-09-02'
+                        })) || [],
+
+                        // Insurance
+                        insurance: [{
+                            sequence: 1,
+                            focal: true,
+                            coverage: {
+                                reference: 'Coverage/' + (serviceReview.subscriber?.memberId || 'ASBA1274712'),
+                                display: 'Coverage for ' + (serviceReview.subscriber?.lastName || 'PATIENT')
+                            }
+                        }],
+
+                        // Item
+                        item: serviceReview.procedures?.map((proc, index) => ({
+                            sequence: index + 1,
+                            productOrService: {
+                                coding: [{
+                                    system: 'http://www.ama-assn.org/go/cpt',
+                                    code: proc.code || '99213',
+                                    display: 'Service ' + (index + 1)
+                                }]
+                            },
+                            servicedPeriod: {
+                                start: proc.fromDate || '2022-09-02',
+                                end: proc.toDate || '2022-09-13'
+                            },
+                            quantity: {
+                                value: parseInt(proc.quantity || '1')
+                            }
+                        })) || []
+                    };
+
+                    // Convert to JSON string
+                    const fhirJson = JSON.stringify(fhirClaim, null, 2);
+                    resolve(fhirJson);
                 } catch (e) {
                     reject(e);
                 }

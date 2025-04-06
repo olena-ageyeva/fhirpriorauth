@@ -1,22 +1,25 @@
-# Use OpenJDK image
+# Use an official OpenJDK image
 FROM eclipse-temurin:17-jdk
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy Maven build files
+# Copy Maven build files first (for caching)
 COPY pom.xml .
 COPY mvnw .
 COPY .mvn .mvn
 
-# Download dependencies (helps with caching)
+# Download dependencies
 RUN ./mvnw dependency:go-offline
 
-# Copy the rest of the code
-COPY src ./src
+# Copy the rest of your code
+COPY . .
 
 # Package the application
 RUN ./mvnw clean package -DskipTests
 
-# Run the application
+# Expose Spring Boot default port
+EXPOSE 8080
+
+# Run the app
 CMD ["java", "-jar", "target/fhirpriorauth-0.0.1-SNAPSHOT.jar"]
