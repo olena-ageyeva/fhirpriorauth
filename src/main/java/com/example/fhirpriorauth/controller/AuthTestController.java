@@ -19,6 +19,11 @@ public class AuthTestController {
     public String testAuth() {
         try {
             String token = tokenService.fetchAccessToken();
+
+            if (token == null) {
+                return "Authentication failed: Unable to obtain token from Availity. Please check your credentials.";
+            }
+
             // Mask the token for security (show only first and last few characters)
             String maskedToken = maskToken(token);
             return "Authentication successful! Token: " + maskedToken;
@@ -43,8 +48,13 @@ public class AuthTestController {
      * Masks a token for display, showing only the first and last few characters
      */
     private String maskToken(String token) {
-        if (token == null || token.length() < 10) {
-            return "[INVALID TOKEN]";
+        // We should never get here with a null token since we check for it in the calling method
+        if (token == null) {
+            return "";
+        }
+
+        if (token.length() < 10) {
+            return token; // Token is too short to mask, just return it
         }
 
         int firstChars = 5;

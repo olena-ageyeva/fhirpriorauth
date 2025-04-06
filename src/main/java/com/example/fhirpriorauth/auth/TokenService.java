@@ -2,6 +2,8 @@ package com.example.fhirpriorauth.auth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,8 @@ import java.time.Instant;
 
 @Service
 public class TokenService {
+
+    private static final Logger log = LoggerFactory.getLogger(TokenService.class);
 
     @Value("${availity.oauth.token-url}")
     private String tokenUrl;
@@ -42,15 +46,16 @@ public class TokenService {
     public String fetchAccessToken() {
         // Check if we have a cached token that's still valid
         if (cachedToken != null && tokenExpiration != null && Instant.now().isBefore(tokenExpiration)) {
-            System.out.println("🔑 Using cached access token (expires in " +
-                    java.time.Duration.between(Instant.now(), tokenExpiration).getSeconds() + " seconds)");
+            log.info("Using cached access token (expires in {} seconds)",
+                    java.time.Duration.between(Instant.now(), tokenExpiration).getSeconds());
             return cachedToken;
         }
 
         try {
-            System.out.println("🔑 Fetching new access token from Availity...");
-            System.out.println("   URL: " + tokenUrl);
-            System.out.println("   Client ID: " + clientId);
+            log.info("Fetching new access token from Availity");
+            log.debug("Token URL: {}", tokenUrl);
+            log.debug("Client ID: {}", clientId);
+            log.debug("Scope: {}", scope);
 
             String requestBody = "grant_type=client_credentials"
                     + "&client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
@@ -63,19 +68,28 @@ public class TokenService {
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
 
-            System.out.println("   Sending request to token endpoint...");
+            log.debug("Sending request to token endpoint");
             HttpResponse<String> response = HttpClient.newHttpClient()
                     .send(request, HttpResponse.BodyHandlers.ofString());
 
+            log.debug("Received response with status code: {}", response.statusCode());
+
             if (response.statusCode() != 200) {
-                System.out.println("❌ AUTHENTICATION ERROR: Failed to get token from Availity");
-                System.out.println("   Status code: " + response.statusCode());
-                System.out.println("   Response: " + response.body());
-                System.out.println("   URL: " + tokenUrl);
+                log.error("AUTHENTICATION ERROR: Failed to get token from Availity");
+                log.error("Status code: {}", response.statusCode());
+                log.error("Response: {}", response.body());
+                log.error("URL: {}", tokenUrl);
                 return null;
             }
 
             JsonNode node = mapper.readTree(response.body());
+
+            // Check if the response contains an access token
+            if (!node.has("access_token")) {
+                log.error("Response does not contain an access token: {}", response.body());
+                return null;
+            }
+
             String token = node.get("access_token").asText();
             int expiresIn = node.has("expires_in") ? node.get("expires_in").asInt() : 300;
 
@@ -83,18 +97,17 @@ public class TokenService {
             cachedToken = token;
             tokenExpiration = Instant.now().plusSeconds(expiresIn - TOKEN_EXPIRY_BUFFER);
 
-            System.out.println("✅ AUTHENTICATION SUCCESS: Successfully obtained token from Availity");
-            System.out.println("   Token: " + token.substring(0, 5) + "..." + token.substring(token.length() - 5));
-            System.out.println("   Expires in: " + expiresIn + " seconds");
-            System.out.println("   Cached until: " + tokenExpiration);
+            log.info("AUTHENTICATION SUCCESS: Successfully obtained token from Availity");
+            log.debug("Token: {}...{}", token.substring(0, 5), token.substring(token.length() - 5));
+            log.debug("Expires in: {} seconds", expiresIn);
+            log.debug("Cached until: {}", tokenExpiration);
 
             return token;
 
         } catch (Exception e) {
-            System.out.println("❌ AUTHENTICATION ERROR: Exception while fetching token");
-            System.out.println("   Error: " + e.getMessage());
-            System.out.println("   URL: " + tokenUrl);
-            e.printStackTrace();
+            log.error("AUTHENTICATION ERROR: Exception while fetching token", e);
+            log.error("Error: {}", e.getMessage());
+            log.error("URL: {}", tokenUrl);
             return null;
         }
     }
