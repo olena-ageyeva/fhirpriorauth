@@ -9,7 +9,7 @@ COPY pom.xml .
 COPY mvnw .
 COPY .mvn .mvn
 
-# ✅ Add permission fix here
+# Make mvnw executable
 RUN chmod +x mvnw
 
 # Download dependencies
@@ -17,6 +17,9 @@ RUN ./mvnw dependency:go-offline
 
 # Copy the rest of your code
 COPY . .
+
+# ✅ Make mvnw executable AGAIN (because COPY . . may overwrite it)
+RUN chmod +x mvnw
 
 # Package the application
 RUN ./mvnw clean package -DskipTests
