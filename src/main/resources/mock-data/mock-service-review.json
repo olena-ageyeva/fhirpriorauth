@@ -1,0 +1,78 @@
+{
+    "serviceReview": {
+      "payer": {
+        "id": "99999"
+      },
+      "requestingProvider": {
+        "lastName": "PROVIDERONE",
+        "firstName": "TEST",
+        "npi": "1234567891",
+        "taxId": "111111111",
+        "addressLine1": "111 HEALTHY PKWY",
+        "city": "JACKSONVILLE",
+        "stateCode": "FL",
+        "zipCode": "22222",
+        "phone": "1234567890",
+        "fax": "",
+        "contactName": "NURSE LINE",
+        "roleCode": "1P"
+      },
+      "subscriber": {
+        "memberId": "NCF103T99937"
+      },
+      "patient": {
+        "firstName": "TEST",
+        "lastName": "PATIENTONE",
+        "subscriberRelationshipCode": "18",
+        "birthDate": "1990-01-01"
+      },
+      "diagnoses": [
+        {
+          "qualifierCode": "ABK",
+          "code": "A52.00"
+        }
+      ],
+      "requestTypeCode": "HS",
+      "serviceTypeCode": "73",
+      "placeOfServiceCode": "22",
+      "serviceLevelCode": "E",
+      "fromDate": "2022-09-02",
+      "toDate": "2022-09-13",
+      "quantity": "1",
+      "quantityTypeCode": "VS",
+      "procedures": [
+        {
+          "fromDate": "2022-09-02",
+          "toDate": "2022-09-13",
+          "code": "99242",
+          "qualifierCode": "HC",
+          "quantity": "1",
+          "quantityTypeCode": "UN"
+        }
+      ],
+      "renderingProviders": [
+        {
+          "lastName": "PROVIDERONE",
+          "firstName": "TEST",
+          "npi": "1234567891",
+          "taxId": "111111111",
+          "roleCode": "71",
+          "addressLine1": "111 HEALTHY PKWY",
+          "city": "JACKSONVILLE",
+          "stateCode": "FL",
+          "zipCode": "22222"
+        },
+        {
+          "lastName": "PROVIDERTWO",
+          "npi": "1234567892",
+          "taxId": "222222222",
+          "roleCode": "FA",
+          "addressLine1": "222 PROCEDURE ROADWAY",
+          "city": "JACKSONVILLE",
+          "stateCode": "FL",
+          "zipCode": "22222"
+        }
+      ]
+    }
+  }
+  

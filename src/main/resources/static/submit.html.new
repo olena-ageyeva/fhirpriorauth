@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Prior Authorization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            border-left: 5px solid #4CAF50;
+        }
+        .error {
+            border-left: 5px solid #f44336;
+        }
+        .pending {
+            border-left: 5px solid #2196F3;
+        }
+        .info {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            word-break: break-all;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #loading {
+            display: none;
+            margin-left: 10px;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            margin-right: 15px;
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 20px;
+            background-color: #4CAF50;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.5s;
+        }
+        .poll-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        .poll-info div {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            background-color: #f5f5f5;
+            border-radius: 3px;
+            margin: 0 5px;
+        }
+        .poll-info div:first-child {
+            margin-left: 0;
+        }
+        .poll-info div:last-child {
+            margin-right: 0;
+        }
+        .poll-info span {
+            font-weight: bold;
+        }
+        #response-container {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .response {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .response:last-child {
+            border-bottom: none;
+        }
+        .timestamp {
+            font-size: 0.8em;
+            color: #666;
+        }
+        details {
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        summary {
+            cursor: pointer;
+            font-weight: bold;
+            padding: 5px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/">Home</a>
+        <a href="/auth.html">Authentication Test</a>
+        <a href="/submit.html">Submit Prior Auth</a>
+        <a href="/poll.html">Poll Status</a>
+    </div>
+
+    <h1>Submit Prior Authorization</h1>
+
+    <div class="card">
+        <h2>Test Submission</h2>
+        <p>Click the button below to submit a test prior authorization request to Availity:</p>
+        <button id="submitAuth">Submit Prior Auth</button>
+        <span id="loading">Loading...</span>
+    </div>
+
+    <div id="status-card" style="display: none;" class="card">
+        <h2>Submission Status</h2>
+        <div id="status-content"></div>
+    </div>
+
+    <div id="polling-card" style="display: none;" class="card">
+        <h2>Polling Status</h2>
+        <div class="poll-info">
+            <div>Attempt: <span id="attempt-count">0</span>/<span id="max-attempts">10</span></div>
+            <div>Elapsed: <span id="elapsed-time">0s</span></div>
+            <div>Status: <span id="status-text">Pending</span></div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+    </div>
+
+    <div id="json-card" style="display: none;" class="card">
+        <h2>Response Details</h2>
+        <details id="json-viewer">
+            <summary>JSON Response (click to expand)</summary>
+            <pre id="json-content">No data available yet</pre>
+        </details>
+    </div>
+
+    <script>
+        document.getElementById('submitAuth').addEventListener('click', function() {
+            const statusCard = document.getElementById('status-card');
+            const pollingCard = document.getElementById('polling-card');
+            const jsonCard = document.getElementById('json-card');
+            const loadingSpan = document.getElementById('loading');
+            
+            // Show loading indicator
+            loadingSpan.style.display = 'inline';
+            
+            // Hide cards
+            statusCard.style.display = 'none';
+            pollingCard.style.display = 'none';
+            jsonCard.style.display = 'none';
+            
+            // Submit the prior auth request
+            fetch('/prior-auth/submit', {
+                method: 'POST'
+            })
+            .then(response => response.text())
+            .then(data => {
+                // Hide loading indicator
+                loadingSpan.style.display = 'none';
+                
+                // Show status card
+                statusCard.style.display = 'block';
+                
+                if (data.includes('Successfully')) {
+                    statusCard.className = 'card success';
+                    const resourceId = data.split('Resource ID: ')[1];
+                    
+                    // Update status content
+                    document.getElementById('status-content').innerHTML = `
+                        <p>Successfully submitted prior authorization request to Availity.</p>
+                        <p><strong>Resource ID:</strong> ${resourceId}</p>
+                    `;
+                    
+                    // Show polling card
+                    pollingCard.style.display = 'block';
+                    pollingCard.className = 'card pending';
+                    
+                    // Show JSON card
+                    jsonCard.style.display = 'block';
+                    
+                    // Start polling
+                    startPolling(resourceId.trim());
+                } else {
+                    statusCard.className = 'card error';
+                    document.getElementById('status-content').innerHTML = `
+                        <p>Failed to submit prior authorization request.</p>
+                        <p>${data}</p>
+                        <p>Please check the logs for more details.</p>
+                    `;
+                }
+            })
+            .catch(error => {
+                // Hide loading indicator
+                loadingSpan.style.display = 'none';
+
+                // Show status card with error
+                statusCard.style.display = 'block';
+                statusCard.className = 'card error';
+                document.getElementById('status-content').innerHTML = `
+                    <p>An error occurred while submitting the prior authorization request:</p>
+                    <p>${error.message}</p>
+                `;
+            });
+        });
+        
+        // Function to start polling for status updates
+        function startPolling(id) {
+            console.log('Starting polling for ID:', id);
+            const maxAttempts = 10;
+            const pollInterval = 2000; // 2 seconds
+            let attempts = 0;
+            let pollTimer;
+            
+            // Start timer
+            const startTime = new Date();
+            const timerInterval = setInterval(function() {
+                const elapsedSeconds = Math.floor((new Date() - startTime) / 1000);
+                const elapsedTimeElement = document.getElementById('elapsed-time');
+                if (elapsedTimeElement) {
+                    elapsedTimeElement.textContent = elapsedSeconds + 's';
+                }
+            }, 1000);
+            
+            // Function to update progress
+            function updateProgress(attempt, status) {
+                const progressPercent = (attempt / maxAttempts) * 100;
+                
+                const progressBar = document.getElementById('progress-bar');
+                if (progressBar) {
+                    progressBar.style.width = progressPercent + '%';
+                }
+                
+                const attemptCount = document.getElementById('attempt-count');
+                if (attemptCount) {
+                    attemptCount.textContent = attempt;
+                }
+                
+                const statusText = document.getElementById('status-text');
+                if (statusText) {
+                    statusText.textContent = status;
+                }
+            }
+            
+            // Function to handle polling completion
+            function completePolling(success, status) {
+                clearInterval(timerInterval);
+                
+                const pollingCard = document.getElementById('polling-card');
+                if (pollingCard) {
+                    if (success) {
+                        pollingCard.className = 'card success';
+                    } else {
+                        pollingCard.className = 'card error';
+                    }
+                }
+                
+                updateProgress(attempts, status);
+            }
+            
+            // Function to poll for status
+            function poll() {
+                if (attempts >= maxAttempts) {
+                    clearTimeout(pollTimer);
+                    completePolling(false, "Timeout");
+                    return;
+                }
+                
+                attempts++;
+                updateProgress(attempts, 'Polling...');
+                
+                fetch(`/prior-auth/submit/${id}/status`)
+                    .then(response => response.text())
+                    .then(data => {
+                        // Extract status from response
+                        let status = 'Unknown';
+                        if (data.includes('Status:')) {
+                            status = data.split('Status:')[1].split('\n')[0].trim();
+                        }
+                        
+                        // Simplify status for display
+                        let simpleStatus = 'Pending';
+                        if (status.includes('Complete')) simpleStatus = 'Complete';
+                        else if (status.includes('Approved')) simpleStatus = 'Approved';
+                        else if (status.includes('Denied')) simpleStatus = 'Denied';
+                        else if (status.includes('Pended')) simpleStatus = 'Pended';
+                        else if (status.includes('Error')) simpleStatus = 'Error';
+                        
+                        updateProgress(attempts, simpleStatus);
+                        
+                        // Update JSON viewer
+                        try {
+                            const jsonContent = document.getElementById('json-content');
+                            if (jsonContent) {
+                                // Try to extract JSON from the response
+                                let jsonData = data;
+                                
+                                // Look for JSON-like content in the response
+                                const jsonMatch = data.match(/\{[\s\S]*\}/);
+                                if (jsonMatch) {
+                                    jsonData = jsonMatch[0];
+                                    
+                                    // Try to parse and format the JSON
+                                    try {
+                                        const formattedJson = JSON.stringify(JSON.parse(jsonData), null, 2);
+                                        jsonContent.textContent = formattedJson;
+                                    } catch (e) {
+                                        // If JSON parsing fails, just show the raw response
+                                        jsonContent.textContent = jsonData;
+                                    }
+                                } else {
+                                    jsonContent.textContent = data;
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Error updating JSON viewer:', e);
+                        }
+                        
+                        // Check if complete
+                        if (data.includes('Complete') || data.includes('Approved') || data.includes('Denied') || data.includes('Pended')) {
+                            clearTimeout(pollTimer);
+                            completePolling(true, simpleStatus);
+                        } else {
+                            // Continue polling
+                            pollTimer = setTimeout(poll, pollInterval);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error polling for status:', error);
+                        updateProgress(attempts, 'Error');
+                        
+                        // Continue polling despite error
+                        pollTimer = setTimeout(poll, pollInterval);
+                    });
+            }
+            
+            // Start polling
+            poll();
+        }
+    </script>
+</body>
+</html>

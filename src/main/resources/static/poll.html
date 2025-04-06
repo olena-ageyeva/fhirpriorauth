@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prior Auth Polling</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            border-left: 5px solid #4CAF50;
+        }
+        .error {
+            border-left: 5px solid #f44336;
+        }
+        .pending {
+            border-left: 5px solid #2196F3;
+        }
+        .info {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            word-break: break-all;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #loading {
+            display: none;
+            margin-left: 10px;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            margin-right: 15px;
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 20px;
+            background-color: #4CAF50;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.5s;
+        }
+        .poll-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        .poll-info div {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            background-color: #f5f5f5;
+            border-radius: 3px;
+            margin: 0 5px;
+        }
+        .poll-info div:first-child {
+            margin-left: 0;
+        }
+        .poll-info div:last-child {
+            margin-right: 0;
+        }
+        .poll-info span {
+            font-weight: bold;
+        }
+        #response-container {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .response {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .response:last-child {
+            border-bottom: none;
+        }
+        .timestamp {
+            font-size: 0.8em;
+            color: #666;
+        }
+        details {
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        summary {
+            cursor: pointer;
+            font-weight: bold;
+            padding: 5px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/">Home</a>
+        <a href="/auth.html">Authentication Test</a>
+        <a href="/submit.html">Submit Prior Auth</a>
+        <a href="/poll.html">Poll Status</a>
+        <a href="/convert.html">FHIR Converter</a>
+    </div>
+
+    <h1>Prior Authorization Polling</h1>
+
+    <div class="card">
+        <h2>Submit and Poll</h2>
+        <p>Submit a prior authorization request and automatically poll for status updates:</p>
+        <div>
+            <label for="resourceId">Resource ID (leave empty to submit new):</label>
+            <input type="text" id="resourceId" placeholder="Enter resource ID or leave empty">
+        </div>
+        <div>
+            <label for="pollInterval">Poll interval (seconds):</label>
+            <input type="number" id="pollInterval" value="2" min="1" max="10">
+        </div>
+        <div>
+            <label for="maxAttempts">Maximum attempts:</label>
+            <input type="number" id="maxAttempts" value="10" min="1" max="30">
+        </div>
+        <button id="submitAndPoll">Submit and Poll</button>
+        <button id="stopPolling" disabled>Stop Polling</button>
+        <span id="loading">Loading...</span>
+    </div>
+
+    <div id="status-card" style="display: none;" class="card">
+        <h2>Submission Status</h2>
+        <div id="status-content"></div>
+    </div>
+
+    <div id="polling-card" style="display: none;" class="card pending">
+        <h2>Polling for Status Updates</h2>
+        <div class="poll-info">
+            <div>Attempt: <span id="attempt-count">0</span>/<span id="max-attempts">10</span></div>
+            <div>Elapsed: <span id="elapsed-time">0s</span></div>
+            <div>Status: <span id="status-text">Pending</span></div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+    </div>
+
+    <div id="json-card" style="display: none;" class="card">
+        <h2>Response Details</h2>
+        <details id="json-viewer">
+            <summary>JSON Response (click to expand)</summary>
+            <pre id="json-content">No data available yet</pre>
+        </details>
+    </div>
+
+    <script>
+        document.getElementById('submitAndPoll').addEventListener('click', function() {
+            const statusCard = document.getElementById('status-card');
+            const pollingCard = document.getElementById('polling-card');
+            const jsonCard = document.getElementById('json-card');
+            const loadingSpan = document.getElementById('loading');
+            const resourceIdInput = document.getElementById('resourceId');
+            const pollIntervalInput = document.getElementById('pollInterval');
+            const maxAttemptsInput = document.getElementById('maxAttempts');
+
+            // Get values
+            const resourceId = resourceIdInput.value.trim();
+            const pollInterval = parseInt(pollIntervalInput.value) || 2;
+            const maxAttempts = parseInt(maxAttemptsInput.value) || 10;
+
+            // Update max attempts display
+            document.getElementById('max-attempts').textContent = maxAttempts;
+
+            // Show loading indicator
+            loadingSpan.style.display = 'inline';
+
+            // Disable submit button, enable stop button
+            this.disabled = true;
+            document.getElementById('stopPolling').disabled = false;
+
+            // Hide cards initially
+            statusCard.style.display = 'none';
+            pollingCard.style.display = 'none';
+            jsonCard.style.display = 'none';
+
+            // Function to start polling
+            function startPolling(id) {
+                // Show polling and JSON cards
+                pollingCard.style.display = 'block';
+                pollingCard.className = 'card pending';
+                jsonCard.style.display = 'block';
+
+                // Reset polling UI
+                document.getElementById('attempt-count').textContent = '0';
+                document.getElementById('elapsed-time').textContent = '0s';
+                document.getElementById('status-text').textContent = 'Pending';
+                document.getElementById('progress-bar').style.width = '0%';
+                document.getElementById('json-content').textContent = 'No data available yet';
+
+                // Start timer
+                const startTime = new Date();
+                const timerInterval = setInterval(function() {
+                    const elapsedSeconds = Math.floor((new Date() - startTime) / 1000);
+                    document.getElementById('elapsed-time').textContent = elapsedSeconds + 's';
+                }, 1000);
+
+                let attempts = 0;
+                let pollTimer;
+                let continuePolling = true;
+
+                // Function to update progress
+                function updateProgress(attempt, status) {
+                    const progressPercent = (attempt / maxAttempts) * 100;
+                    document.getElementById('progress-bar').style.width = progressPercent + '%';
+                    document.getElementById('attempt-count').textContent = attempt;
+                    document.getElementById('status-text').textContent = status;
+                }
+
+                // Function to handle polling completion
+                function completePolling(success, status) {
+                    clearInterval(timerInterval);
+
+                    if (success) {
+                        pollingCard.className = 'card success';
+                    } else {
+                        pollingCard.className = 'card error';
+                    }
+
+                    updateProgress(attempts, status);
+
+                    // Enable submit button, disable stop button
+                    document.getElementById('submitAndPoll').disabled = false;
+                    document.getElementById('stopPolling').disabled = true;
+
+                    // Hide loading indicator
+                    loadingSpan.style.display = 'none';
+                }
+
+                // Stop polling button handler
+                document.getElementById('stopPolling').addEventListener('click', function() {
+                    continuePolling = false;
+                    this.disabled = true;
+                    completePolling(false, "Stopped");
+                });
+
+                // Function to poll for status
+                function poll() {
+                    if (!continuePolling || attempts >= maxAttempts) {
+                        if (attempts >= maxAttempts) {
+                            completePolling(false, "Timeout");
+                        }
+                        return;
+                    }
+
+                    attempts++;
+                    updateProgress(attempts, 'Polling...');
+
+                    fetch(`/prior-auth/submit/${id}/status`)
+                        .then(response => response.text())
+                        .then(data => {
+                            // Extract status from response
+                            let status = 'Unknown';
+                            if (data.includes('Status:')) {
+                                status = data.split('Status:')[1].split('\n')[0].trim();
+                            }
+
+                            // Simplify status for display
+                            let simpleStatus = 'Pending';
+                            if (status.includes('Complete')) simpleStatus = 'Complete';
+                            else if (status.includes('Approved')) simpleStatus = 'Approved';
+                            else if (status.includes('Denied')) simpleStatus = 'Denied';
+                            else if (status.includes('Pended')) simpleStatus = 'Pended';
+                            else if (status.includes('Error')) simpleStatus = 'Error';
+
+                            updateProgress(attempts, simpleStatus);
+
+                            // Update JSON viewer
+                            try {
+                                const jsonContent = document.getElementById('json-content');
+                                if (jsonContent) {
+                                    // Try to extract JSON from the response
+                                    let jsonData = data;
+
+                                    // Look for JSON-like content in the response
+                                    const jsonMatch = data.match(/\{[\s\S]*\}/);
+                                    if (jsonMatch) {
+                                        jsonData = jsonMatch[0];
+
+                                        // Try to parse and format the JSON
+                                        try {
+                                            const formattedJson = JSON.stringify(JSON.parse(jsonData), null, 2);
+                                            jsonContent.textContent = formattedJson;
+                                        } catch (e) {
+                                            // If JSON parsing fails, just show the raw response
+                                            jsonContent.textContent = jsonData;
+                                        }
+                                    } else {
+                                        jsonContent.textContent = data;
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Error updating JSON viewer:', e);
+                            }
+
+                            // Check if complete
+                            if (data.includes('Complete') || data.includes('Approved') || data.includes('Denied') || data.includes('Pended')) {
+                                completePolling(true, simpleStatus);
+                            } else if (continuePolling && attempts < maxAttempts) {
+                                // Continue polling
+                                pollTimer = setTimeout(poll, pollInterval * 1000);
+                            } else {
+                                completePolling(false, "Timeout");
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error polling for status:', error);
+                            updateProgress(attempts, 'Error');
+
+                            // Continue polling despite error
+                            if (continuePolling && attempts < maxAttempts) {
+                                pollTimer = setTimeout(poll, pollInterval * 1000);
+                            } else {
+                                completePolling(false, "Error: " + error.message);
+                            }
+                        });
+                }
+
+                // Check if the prior auth is already completed
+                fetch(`/prior-auth/polling/${id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('DEBUGGING: Checking if prior auth is already completed:', data);
+
+                        if (data.completed === true) {
+                            console.log('DEBUGGING: Prior auth is already completed, not starting polling');
+                            updateProgress(attempts, data.statusDescription || 'Completed');
+                            completePolling(true, data.statusDescription || 'Completed');
+                        } else {
+                            // Start polling
+                            poll();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking prior auth status:', error);
+                        // Start polling anyway
+                        poll();
+                    });
+            }
+
+            // Submit new request or use existing ID
+            if (resourceId) {
+                // Use existing resource ID
+                statusCard.style.display = 'block';
+                statusCard.className = 'card success';
+                document.getElementById('status-content').innerHTML = `
+                    <p>Using existing resource ID for polling.</p>
+                    <p><strong>Resource ID:</strong> ${resourceId}</p>
+                `;
+
+                // Start polling with existing ID
+                startPolling(resourceId);
+            } else {
+                // Submit new request
+                fetch('/prior-auth/submit', {
+                    method: 'POST'
+                })
+                .then(response => response.text())
+                .then(data => {
+                    // Show status card
+                    statusCard.style.display = 'block';
+
+                    if (data.includes('Successfully')) {
+                        // Extract resource ID from response
+                        const match = data.match(/Resource ID: ([^\n]+)/);
+                        if (match && match[1]) {
+                            const newId = match[1].trim();
+                            resourceIdInput.value = newId;
+
+                            // Update status card
+                            statusCard.className = 'card success';
+                            document.getElementById('status-content').innerHTML = `
+                                <p>Successfully submitted prior authorization request to Availity.</p>
+                                <p><strong>Resource ID:</strong> ${newId}</p>
+                            `;
+
+                            // Start polling with new ID
+                            startPolling(newId);
+                        } else {
+                            // Could not extract resource ID
+                            statusCard.className = 'card error';
+                            document.getElementById('status-content').innerHTML = `
+                                <p>Could not extract resource ID from response:</p>
+                                <div class="info">${data}</div>
+                            `;
+
+                            // Enable submit button, disable stop button
+                            document.getElementById('submitAndPoll').disabled = false;
+                            document.getElementById('stopPolling').disabled = true;
+
+                            // Hide loading indicator
+                            loadingSpan.style.display = 'none';
+                        }
+                    } else {
+                        // Submission failed
+                        statusCard.className = 'card error';
+                        document.getElementById('status-content').innerHTML = `
+                            <p>Failed to submit prior authorization request:</p>
+                            <div class="info">${data}</div>
+                        `;
+
+                        // Enable submit button, disable stop button
+                        document.getElementById('submitAndPoll').disabled = false;
+                        document.getElementById('stopPolling').disabled = true;
+
+                        // Hide loading indicator
+                        loadingSpan.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    // Show error in status card
+                    statusCard.style.display = 'block';
+                    statusCard.className = 'card error';
+                    document.getElementById('status-content').innerHTML = `
+                        <p>Error submitting prior authorization request:</p>
+                        <div class="info">${error.message}</div>
+                    `;
+
+                    // Enable submit button, disable stop button
+                    document.getElementById('submitAndPoll').disabled = false;
+                    document.getElementById('stopPolling').disabled = true;
+
+                    // Hide loading indicator
+                    loadingSpan.style.display = 'none';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

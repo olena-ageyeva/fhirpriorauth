@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FHIR Prior Authorization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card h2 {
+            margin-top: 0;
+        }
+        .card-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            margin-right: 15px;
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/">Home</a>
+        <a href="/auth.html">Authentication Test</a>
+        <a href="/submit.html">Submit Prior Auth</a>
+        <a href="/poll.html">Poll Status</a>
+        <a href="/convert.html">FHIR Converter</a>
+    </div>
+
+    <h1>FHIR Prior Authorization</h1>
+
+    <p>Welcome to the FHIR Prior Authorization application. This application demonstrates how to interact with the Availity API for prior authorization requests.</p>
+
+    <a href="/auth.html" class="card-link">
+        <div class="card">
+            <h2>Authentication Test</h2>
+            <p>Test authentication with Availity using OAuth 2.0.</p>
+            <p>This test will verify that your application can successfully authenticate with Availity and obtain an access token.</p>
+            <div class="button">Test Authentication</div>
+        </div>
+    </a>
+
+    <a href="/submit.html" class="card-link">
+        <div class="card">
+            <h2>Submit Prior Authorization</h2>
+            <p>Submit a test prior authorization request to Availity.</p>
+            <p>This test will create a sample prior authorization request and submit it to Availity.</p>
+            <div class="button">Submit Prior Auth</div>
+        </div>
+    </a>
+
+    <a href="/poll.html" class="card-link">
+        <div class="card">
+            <h2>Poll Status</h2>
+            <p>Poll for status updates on a prior authorization request.</p>
+            <p>This tool allows you to submit a request and automatically poll for status updates.</p>
+            <div class="button">Poll Status</div>
+        </div>
+    </a>
+
+    <a href="/convert.html" class="card-link">
+        <div class="card">
+            <h2>FHIR Converter</h2>
+            <p>Convert FHIR Claim resources to Availity Service Review format.</p>
+            <p>This tool allows you to convert between FHIR and Availity formats.</p>
+            <div class="button">Convert Formats</div>
+        </div>
+    </a>
+</body>
+</html>
