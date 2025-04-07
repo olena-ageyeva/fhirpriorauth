@@ -593,4 +593,7 @@ document.addEventListener('DOMContentLoaded', function() {
     fhirJsonTextarea.value = formatJson(sampleFhirJson);
     availityJsonViewer.innerHTML = `<pre>${formatJson(sampleAvailityJson)}</pre>`;
     availityJsonEditor.value = formatJson(sampleAvailityJson);
+    fhirJsonTextarea.value = formatJson(sampleFhirJson); 
+    fhirJsonViewer.innerHTML = `<pre>${formatJson(sampleFhirJson)}</pre>`;
+    fhirJsonEditor.value = formatJson(sampleFhirJson);  
 });
