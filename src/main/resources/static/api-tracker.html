@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Call Tracker</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/api-tracker.css">
+</head>
+<body>
+    <div class="nav">
+        <a href="/">Home</a>
+        <a href="/auth.html">Authentication Test</a>
+        <a href="/submit.html">Submit Prior Auth</a>
+        <a href="/poll.html">Poll Status</a>
+        <a href="/convert.html">FHIR Converter</a>
+        <a href="/api-tracker.html" class="active">API Tracker</a>
+    </div>
+
+    <h1>External API Call Tracker</h1>
+
+    <div class="card">
+        <h2>API Call Filters</h2>
+        <div class="filter-controls">
+            <div class="filter-group">
+                <label for="endpoint-filter">Endpoint:</label>
+                <select id="endpoint-filter">
+                    <option value="all">All Endpoints</option>
+                    <option value="/submit">Submit Endpoint</option>
+                    <option value="/status">Status Endpoint</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="date-filter">Date Range:</label>
+                <select id="date-filter">
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="week">Last 7 Days</option>
+                    <option value="month">Last 30 Days</option>
+                </select>
+            </div>
+            <button id="refresh-btn" class="primary-btn">Refresh</button>
+            <button id="clear-logs-btn" class="danger-btn">Clear Logs</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>API Call Logs</h2>
+        <div class="tabs">
+            <button class="tab-button active" data-tab="submit-calls">Submit Calls</button>
+            <button class="tab-button" data-tab="status-calls">Status Calls</button>
+        </div>
+        
+        <div class="tab-content">
+            <div id="submit-calls-tab" class="tab-pane active">
+                <div class="table-container">
+                    <table id="submit-calls-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Client IP</th>
+                                <th>Request ID</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="submit-calls-body">
+                            <!-- Submit calls will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="submit-pagination" class="pagination">
+                    <!-- Pagination controls will be added here -->
+                </div>
+            </div>
+            
+            <div id="status-calls-tab" class="tab-pane">
+                <div class="table-container">
+                    <table id="status-calls-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Client IP</th>
+                                <th>Request ID</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="status-calls-body">
+                            <!-- Status calls will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="status-pagination" class="pagination">
+                    <!-- Pagination controls will be added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for viewing request details -->
+    <div id="request-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Request Details</h2>
+            <div class="tabs">
+                <button class="tab-button active" data-tab="request-fhir">FHIR</button>
+                <button class="tab-button" data-tab="request-availity">Availity (Converted)</button>
+            </div>
+            <div class="tab-content">
+                <div id="request-fhir-tab" class="tab-pane active">
+                    <pre id="request-fhir-content" class="json-viewer"></pre>
+                </div>
+                <div id="request-availity-tab" class="tab-pane">
+                    <pre id="request-availity-content" class="json-viewer"></pre>
+                </div>
+            </div>
+            <h3>Response</h3>
+            <pre id="response-content" class="json-viewer"></pre>
+        </div>
+    </div>
+
+    <script src="js/api-tracker.js"></script>
+</body>
+</html>
