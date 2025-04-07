@@ -1,4 +1,8 @@
 /* Styles for API Tracker page */
+body {
+    max-width: 1200px;
+    margin: 0 auto;
+}
 
 /* Filter controls */
 .filter-controls {
@@ -74,6 +78,14 @@ th, td {
     border-bottom: 1px solid #ddd;
 }
 
+tr {
+    margin-bottom: 8px;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
 th {
     background-color: #f5f5f5;
     font-weight: bold;
@@ -103,25 +115,39 @@ tr:hover {
     display: flex;
     justify-content: center;
     margin-top: 20px;
+    border-bottom: none;
 }
 
 .pagination button {
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
-    padding: 8px 12px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    padding: 8px 15px;
     margin: 0 5px;
     cursor: pointer;
-    border-radius: 4px;
+    font-size: 14px;
+    color: #333;
+    font-weight: normal;
+}
+
+.pagination button:hover {
+    background-color: #e8e8e8;
+    border-color: #bbb;
 }
 
 .pagination button.active {
     background-color: #4CAF50;
     color: white;
     border-color: #4CAF50;
+    font-weight: bold;
 }
 
-.pagination button:hover:not(.active) {
-    background-color: #ddd;
+.pagination button:disabled {
+    background-color: #f5f5f5;
+    color: #aaa;
+    cursor: not-allowed;
+    border-color: #ddd;
 }
 
 /* Modal styles */
@@ -143,7 +169,7 @@ tr:hover {
     padding: 20px;
     border: 1px solid #888;
     width: 80%;
-    max-width: 1000px;
+    max-width: 800px;
     border-radius: 5px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

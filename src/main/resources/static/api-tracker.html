@@ -47,55 +47,25 @@
 
     <div class="card">
         <h2>API Call Logs</h2>
-        <div class="tabs">
-            <button class="tab-button active" data-tab="submit-calls">Submit Calls</button>
-            <button class="tab-button" data-tab="status-calls">Status Calls</button>
+        <div class="table-container">
+            <table id="api-calls-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Endpoint</th>
+                        <th>Client IP</th>
+                        <th>Request ID</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="api-calls-body">
+                    <!-- API calls will be populated here -->
+                </tbody>
+            </table>
         </div>
-        
-        <div class="tab-content">
-            <div id="submit-calls-tab" class="tab-pane active">
-                <div class="table-container">
-                    <table id="submit-calls-table">
-                        <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>Client IP</th>
-                                <th>Request ID</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="submit-calls-body">
-                            <!-- Submit calls will be populated here -->
-                        </tbody>
-                    </table>
-                </div>
-                <div id="submit-pagination" class="pagination">
-                    <!-- Pagination controls will be added here -->
-                </div>
-            </div>
-            
-            <div id="status-calls-tab" class="tab-pane">
-                <div class="table-container">
-                    <table id="status-calls-table">
-                        <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>Client IP</th>
-                                <th>Request ID</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="status-calls-body">
-                            <!-- Status calls will be populated here -->
-                        </tbody>
-                    </table>
-                </div>
-                <div id="status-pagination" class="pagination">
-                    <!-- Pagination controls will be added here -->
-                </div>
-            </div>
+        <div id="api-pagination" class="pagination">
+            <!-- Pagination controls will be added here -->
         </div>
     </div>
 
