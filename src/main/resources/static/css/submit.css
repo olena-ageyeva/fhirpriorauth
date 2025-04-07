@@ -1,0 +1,128 @@
+/* Page-specific styles for submit.html */
+body {
+    max-width: 800px;
+}
+
+.pending {
+    border-left: 5px solid #2196F3;
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 15px;
+}
+
+.tab-button {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    padding: 8px 15px;
+    margin-right: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    font-weight: normal;
+}
+
+.tab-button:hover {
+    background-color: #e8e8e8;
+    border-color: #bbb;
+}
+
+.tab-button.active {
+    background-color: #fff;
+    border-bottom: 1px solid #fff;
+    margin-bottom: -1px;
+    font-weight: bold;
+    color: #4CAF50;
+    box-shadow: 0 -2px 3px rgba(0,0,0,0.05);
+}
+
+.tab-button.active:hover {
+    background-color: #fff;
+}
+
+.tab-content {
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-top: none;
+    background-color: #fff;
+    border-radius: 0 0 4px 4px;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+.convert-actions {
+    margin-top: 15px;
+    text-align: right;
+}
+
+#loading {
+    display: none;
+    margin-left: 10px;
+}
+
+.progress-container {
+    width: 100%;
+    background-color: #f1f1f1;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.progress-bar {
+    height: 20px;
+    background-color: #4CAF50;
+    border-radius: 5px;
+    width: 0%;
+    transition: width 0.5s;
+}
+
+.poll-info {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+}
+
+.poll-info div {
+    flex: 1;
+    text-align: center;
+    padding: 5px;
+    background-color: #f5f5f5;
+    border-radius: 3px;
+    margin: 0 5px;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+details {
+    margin-bottom: 15px;
+}
+
+summary {
+    cursor: pointer;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+pre {
+    background-color: #f8f8f8;
+    padding: 10px;
+    border-radius: 3px;
+    overflow: auto;
+    max-height: 400px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}

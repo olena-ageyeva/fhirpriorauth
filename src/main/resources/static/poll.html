@@ -4,153 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prior Auth Polling</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        h1 {
-            color: #333;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 10px;
-        }
-        .card {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 20px;
-            margin: 20px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .success {
-            border-left: 5px solid #4CAF50;
-        }
-        .error {
-            border-left: 5px solid #f44336;
-        }
-        .pending {
-            border-left: 5px solid #2196F3;
-        }
-        .info {
-            background-color: #f5f5f5;
-            padding: 10px;
-            border-radius: 3px;
-            word-break: break-all;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        #loading {
-            display: none;
-            margin-left: 10px;
-        }
-        .nav {
-            margin-bottom: 20px;
-        }
-        .nav a {
-            margin-right: 15px;
-            color: #4CAF50;
-            text-decoration: none;
-        }
-        .nav a:hover {
-            text-decoration: underline;
-        }
-        .progress-container {
-            width: 100%;
-            background-color: #f1f1f1;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .progress-bar {
-            height: 20px;
-            background-color: #4CAF50;
-            border-radius: 5px;
-            width: 0%;
-            transition: width 0.5s;
-        }
-        .poll-info {
-            display: flex;
-            justify-content: space-between;
-            margin: 10px 0;
-        }
-        .poll-info div {
-            flex: 1;
-            text-align: center;
-            padding: 5px;
-            background-color: #f5f5f5;
-            border-radius: 3px;
-            margin: 0 5px;
-        }
-        .poll-info div:first-child {
-            margin-left: 0;
-        }
-        .poll-info div:last-child {
-            margin-right: 0;
-        }
-        .poll-info span {
-            font-weight: bold;
-        }
-        #response-container {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-top: 20px;
-        }
-        .response {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        .response:last-child {
-            border-bottom: none;
-        }
-        .timestamp {
-            font-size: 0.8em;
-            color: #666;
-        }
-        details {
-            margin-top: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
-            background-color: #f9f9f9;
-        }
-        summary {
-            cursor: pointer;
-            font-weight: bold;
-            padding: 5px;
-            background-color: #f0f0f0;
-            border-radius: 3px;
-        }
-        pre {
-            background-color: #f5f5f5;
-            padding: 10px;
-            border-radius: 3px;
-            overflow-x: auto;
-            margin-top: 10px;
-            max-height: 300px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-    </style>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/poll.css">
 </head>
 <body>
     <div class="nav">
@@ -402,6 +257,7 @@
                     });
             }
 
+
             // Submit new request or use existing ID
             if (resourceId) {
                 // Use existing resource ID
@@ -414,7 +270,8 @@
 
                 // Start polling with existing ID
                 startPolling(resourceId);
-            } else {
+            }
+            else {
                 // Submit new request
                 fetch('/prior-auth/submit', {
                     method: 'POST'
@@ -488,6 +345,8 @@
                     loadingSpan.style.display = 'none';
                 });
             }
+       
+       
         });
     </script>
 </body>

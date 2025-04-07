@@ -1,0 +1,72 @@
+/* Page-specific styles for poll.html */
+body {
+    max-width: 800px;
+}
+
+.pending {
+    border-left: 5px solid #2196F3;
+}
+
+#loading {
+    display: none;
+    margin-left: 10px;
+}
+
+.progress-container {
+    width: 100%;
+    background-color: #f1f1f1;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.progress-bar {
+    height: 20px;
+    background-color: #4CAF50;
+    border-radius: 5px;
+    width: 0%;
+    transition: width 0.5s;
+}
+
+.poll-info {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+}
+
+.poll-info div {
+    flex: 1;
+    text-align: center;
+    padding: 5px;
+    background-color: #f5f5f5;
+    border-radius: 3px;
+    margin: 0 5px;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+input {
+    padding: 8px;
+    margin: 5px 0 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+}
+
+pre {
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 3px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}

@@ -1,0 +1,17 @@
+/* Page-specific styles for auth.html */
+body {
+    max-width: 800px;
+}
+
+.token {
+    font-family: monospace;
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 3px;
+    word-break: break-all;
+}
+
+#loading {
+    display: none;
+    margin-left: 10px;
+}

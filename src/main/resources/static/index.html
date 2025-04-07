@@ -1,118 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FHIR Prior Authorization</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        h1 {
-            color: #333;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 10px;
-        }
-        .card {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 20px;
-            margin: 20px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .card h2 {
-            margin-top: 0;
-        }
-        .card-link {
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-        .nav {
-            margin-bottom: 20px;
-        }
-        .nav a {
-            margin-right: 15px;
-            color: #4CAF50;
-            text-decoration: none;
-        }
-        .nav a:hover {
-            text-decoration: underline;
-        }
-        .button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin-top: 10px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        .button:hover {
-            background-color: #45a049;
-        }
-    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FHIR Prior Authorization Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/index.css" />
 </head>
+
 <body>
     <div class="nav">
         <a href="/">Home</a>
         <a href="/auth.html">Authentication Test</a>
         <a href="/submit.html">Submit Prior Auth</a>
         <a href="/poll.html">Poll Status</a>
-        <a href="/convert.html">FHIR Converter</a>
+        <a href="/convert.html">FHIR Converter</a>        
     </div>
 
-    <h1>FHIR Prior Authorization</h1>
 
-    <p>Welcome to the FHIR Prior Authorization application. This application demonstrates how to interact with the Availity API for prior authorization requests.</p>
+    <h1>FHIR Prior Authorization Dashboard</h1>
 
-    <a href="/auth.html" class="card-link">
-        <div class="card">
-            <h2>Authentication Test</h2>
-            <p>Test authentication with Availity using OAuth 2.0.</p>
-            <p>This test will verify that your application can successfully authenticate with Availity and obtain an access token.</p>
-            <div class="button">Test Authentication</div>
+    <p>
+        This dashboard demonstrates how to integrate with the <strong>Availity API</strong> to submit and manage
+        <strong>FHIR-based Prior Authorization</strong> requests. It is designed for healthcare developers and
+        integrators looking to streamline their claims workflows using modern standards.
+    </p>
+
+
+    <div class="section">       
+        <div class="cards">
+            <div class="card">
+                <h3>Authentication Test</h3>
+                <p>Verify connectivity with the Availity API using OAuth 2.0.</p>
+                <a class="button" href="/auth.html">Start Test</a>
+            </div>
+            <div class="card">
+                <h3>Submit Prior Authorization</h3>
+                <p>Create and submit a FHIR Claim request to Availity.</p>
+                <a class="button" href="/submit.html">Submit Request</a>
+            </div>
+            <div class="card">
+                <h3>Poll Status</h3>
+                <p>Track the status of your authorization requests.</p>
+                <a class="button" href="/poll.html">Check Status</a>
+            </div>
+            <div class="card">
+                <h3>FHIR Converter</h3>
+                <p>Convert between FHIR and Availity JSON formats.</p>
+                <a class="button" href="/convert.html">Convert Now</a>
+            </div>
         </div>
-    </a>
+    </div>
 
-    <a href="/submit.html" class="card-link">
-        <div class="card">
-            <h2>Submit Prior Authorization</h2>
-            <p>Submit a test prior authorization request to Availity.</p>
-            <p>This test will create a sample prior authorization request and submit it to Availity.</p>
-            <div class="button">Submit Prior Auth</div>
-        </div>
-    </a>
+    <div class="intro">
 
-    <a href="/poll.html" class="card-link">
-        <div class="card">
-            <h2>Poll Status</h2>
-            <p>Poll for status updates on a prior authorization request.</p>
-            <p>This tool allows you to submit a request and automatically poll for status updates.</p>
-            <div class="button">Poll Status</div>
-        </div>
-    </a>
+        <div class="logo-row">
+            <img src="availity-logo.webp" alt="Availity Logo" />
+            <img src="FHIR_logo.png" alt="FHIR Logo" />
+            <img src="athenahealth-logo.png" alt="Provider Logo" />
 
-    <a href="/convert.html" class="card-link">
-        <div class="card">
-            <h2>FHIR Converter</h2>
-            <p>Convert FHIR Claim resources to Availity Service Review format.</p>
-            <p>This tool allows you to convert between FHIR and Availity formats.</p>
-            <div class="button">Convert Formats</div>
         </div>
-    </a>
+    </div>
+
+    <div class="section">
+        <h2>What is Prior Authorization?</h2>
+        <p>
+            Prior Authorization is a process by which healthcare providers obtain approval from a payer before
+            delivering a service
+            to ensure reimbursement. This app simulates how this process works with FHIR Claims and Availity APIs.
+        </p>
+    </div>
+
 </body>
+
 </html>
